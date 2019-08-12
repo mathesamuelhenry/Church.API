@@ -24,7 +24,7 @@ namespace Church.API.Controllers
 
         // GET: api/Accounts
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Account>>> GetAccount()
+        public async Task<List<Account>> Get()
         {
             return await _context.Account.ToListAsync();
         }
@@ -56,6 +56,7 @@ namespace Church.API.Controllers
             _context.Entry(account).Property(x => x.AccountName).IsModified = true;
             _context.Entry(account).Property(x => x.BankName).IsModified = true;
             _context.Entry(account).Property(x => x.InitialBalance).IsModified = true;
+            _context.Entry(account).Property(x => x.DateChanged).IsModified = true;
 
             try
             {
@@ -80,7 +81,9 @@ namespace Church.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Account>> PostAccount(Account account)
         {
-            account.AccountId = Utils.GetNextId(_context, "contributor");
+            account.AccountId = Utils.GetNextIdAsync(_context, "account").Result;
+            account.Status = 1;
+
             _context.Account.Add(account);
             await _context.SaveChangesAsync();
 
@@ -101,6 +104,45 @@ namespace Church.API.Controllers
             await _context.SaveChangesAsync();
 
             return account;
+        }
+
+        // PUT: api/EndAccount/5
+        [HttpPut]
+        [Route("EndAccount/{id}")]
+        public async Task<IActionResult> EndAccount(int id, Account account)
+        {
+            if (id != account.AccountId)
+            {
+                return BadRequest();
+            }
+            
+            if (account.AccountEndDate == null)
+                account.AccountEndDate = DateTime.UtcNow;
+
+            if (account.DateChanged == null)
+                account.DateChanged = DateTime.UtcNow;
+            
+
+            _context.Entry(account).Property(x => x.AccountEndDate).IsModified = true;
+            _context.Entry(account).Property(x => x.DateChanged).IsModified = true;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!AccountExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
         private bool AccountExists(int id)

@@ -23,20 +23,43 @@ namespace Church.API.Controllers
 
         // GET: api/Transactions
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Contribution>>> GetContribution()
+        [Route("{page}/{limit}")]
+        public List<Contribution> SearchTransactions(int page, int limit)
+        {
+            if (page == 0)
+                page = 1;
+            
+            if (limit == 0)
+                limit = int.MaxValue;
+
+            var skip = (page - 1) * limit;
+
+            return _context.Contribution
+                .OrderByDescending(x => x.TransactionDate)
+                .Skip(skip)
+                .Take(limit)
+                .ToList();
+        }
+
+        // GET: api/Transactions
+        [HttpGet]
+        public async Task<List<Contribution>> GetContribution()
         {
             return await _context.Contribution.ToListAsync();
         }
 
         // GET: api/Transactions/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Contribution>> GetContribution(int id)
+        [HttpGet("GetTransaction/{id}")]
+        public Contribution GetContribution(int id)
         {
-            var contribution = await _context.Contribution.FindAsync(id);
+            var contribution = _context.Contribution
+                .Where(x => x.ContributionId == id)
+                .Include(mem => mem.Contributor)
+                .FirstOrDefault();
 
             if (contribution == null)
             {
-                return NotFound();
+                
             }
 
             return contribution;
@@ -51,7 +74,7 @@ namespace Church.API.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(contribution).State = EntityState.Modified;
+            _context.Entry(contribution).Property(x => x.ContributionName).IsModified = true;
 
             try
             {

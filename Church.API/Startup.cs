@@ -37,7 +37,7 @@ namespace Church.API
             });
 
             services.AddDbContext<IronChurchContext>(options => 
-                options.UseMySql(Configuration.GetConnectionString("DefaultConnection")));
+                options.UseMySql(Configuration.GetConnectionString("AWSConnection")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

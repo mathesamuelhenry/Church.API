@@ -86,11 +86,12 @@ namespace Church.API.Controllers
                 return NotFound();
             }
 
+            if (!this.TransactionsExistForMemberId(id))
+            {
+                _context.Contributor.Remove(contributor);
+                await _context.SaveChangesAsync();
+            }
             
-
-            _context.Contributor.Remove(contributor);
-            await _context.SaveChangesAsync();
-
             return contributor;
         }
 
