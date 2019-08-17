@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.29102.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Church.API", "Church.API\Church.API.csproj", "{BD344007-7BB9-4B8C-B12E-D09FD6CD97B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Church.API.Tests", "Church.API.Tests\Church.API.Tests.csproj", "{D27EB9EA-3400-45AF-A1F3-217E409AF8B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Church.API.Tests", "Church.API.Tests\Church.API.Tests.csproj", "{D27EB9EA-3400-45AF-A1F3-217E409AF8B5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Church.API.Models", "..\Church.API.Models\Church.API.Models.csproj", "{774DB845-8D8E-4EBC-A65B-7725843C7F40}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{D27EB9EA-3400-45AF-A1F3-217E409AF8B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D27EB9EA-3400-45AF-A1F3-217E409AF8B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D27EB9EA-3400-45AF-A1F3-217E409AF8B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{774DB845-8D8E-4EBC-A65B-7725843C7F40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{774DB845-8D8E-4EBC-A65B-7725843C7F40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{774DB845-8D8E-4EBC-A65B-7725843C7F40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{774DB845-8D8E-4EBC-A65B-7725843C7F40}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

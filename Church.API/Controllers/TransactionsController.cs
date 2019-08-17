@@ -23,7 +23,7 @@ namespace Church.API.Controllers
 
         // GET: api/Transactions
         [HttpGet]
-        [Route("{page}/{limit}")]
+        [Route("SearchTransactions/{page}/{limit}")]
         public List<Contribution> SearchTransactions(int page, int limit)
         {
             if (page == 0)
@@ -35,21 +35,15 @@ namespace Church.API.Controllers
             var skip = (page - 1) * limit;
 
             return _context.Contribution
+                .Include(mem => mem.Contributor)
                 .OrderByDescending(x => x.TransactionDate)
                 .Skip(skip)
                 .Take(limit)
                 .ToList();
         }
 
-        // GET: api/Transactions
-        [HttpGet]
-        public async Task<List<Contribution>> GetContribution()
-        {
-            return await _context.Contribution.ToListAsync();
-        }
-
         // GET: api/Transactions/5
-        [HttpGet("GetTransaction/{id}")]
+        [HttpGet("{id}")]
         public Contribution GetContribution(int id)
         {
             var contribution = _context.Contribution
@@ -58,9 +52,7 @@ namespace Church.API.Controllers
                 .FirstOrDefault();
 
             if (contribution == null)
-            {
-                
-            }
+            { }
 
             return contribution;
         }

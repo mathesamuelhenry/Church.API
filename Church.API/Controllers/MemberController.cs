@@ -26,7 +26,7 @@ namespace Church.API.Controllers
         [HttpGet]
         public async Task<List<Contributor>> Get()
         {
-            return await _context.Contributor.ToListAsync();
+            return await _context.Contributor.Where(x => x.Status == 1).ToListAsync();
         }
 
         // GET: api/Member/5

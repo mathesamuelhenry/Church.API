@@ -7,8 +7,8 @@ namespace Church.API.Models
     {
         public Contributor()
         {
-            Contribution = new HashSet<Contribution>();
-            ContributorLoan = new HashSet<ContributorLoan>();
+            // Contribution = new HashSet<Contribution>();
+            // ContributorLoan = new HashSet<ContributorLoan>();
         }
 
         public int ContributorId { get; set; }
@@ -19,7 +19,7 @@ namespace Church.API.Models
         public DateTime? DateAdded { get; set; }
         public DateTime? DateChanged { get; set; }
 
-        public virtual ICollection<Contribution> Contribution { get; set; }
-        public virtual ICollection<ContributorLoan> ContributorLoan { get; set; }
+        // public virtual ICollection<Contribution> Contribution { get; set; }
+        // public virtual ICollection<ContributorLoan> ContributorLoan { get; set; }
     }
 }

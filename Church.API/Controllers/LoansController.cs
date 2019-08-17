@@ -25,7 +25,7 @@ namespace Church.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ContributorLoan>>> GetContributorLoan()
         {
-            return await _context.ContributorLoan.ToListAsync();
+            return await _context.ContributorLoan.Include(x => x.Contributor).ToListAsync();
         }
 
         // GET: api/Loans/5

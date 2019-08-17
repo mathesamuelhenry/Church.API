@@ -184,11 +184,14 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("transaction_type")
                     .HasColumnType("int(11)")
                     .HasDefaultValueSql("'1'");
-
-                entity.HasOne(d => d.Contributor)
+                // contribution has one   contributor
+                // contributor  with many contributions
+                // contribution have a foreign key of contributor id
+                // contribution has constraint name "contribution_ibfk_1"
+                /*entity.HasOne(d => d.Contributor)
                     .WithMany(p => p.Contribution)
                     .HasForeignKey(d => d.ContributorId)
-                    .HasConstraintName("contribution_ibfk_1");
+                    .HasConstraintName("contribution_ibfk_1");*/
             });
 
             modelBuilder.Entity<Contributor>(entity =>
@@ -258,11 +261,11 @@ namespace Church.API.Data.DBContext
                     .HasColumnType("tinyint(4)")
                     .HasDefaultValueSql("'1'");
 
-                entity.HasOne(d => d.Contributor)
+                /*entity.HasOne(d => d.Contributor)
                     .WithMany(p => p.ContributorLoan)
                     .HasForeignKey(d => d.ContributorId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("contributor_loan_ibfk_1");
+                    .HasConstraintName("contributor_loan_ibfk_1");*/
             });
 
             modelBuilder.Entity<SeqControl>(entity =>
