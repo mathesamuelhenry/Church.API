@@ -29,15 +29,30 @@ namespace Church.API.Controllers
             return await _context.Contributor.Where(x => x.Status == 1).ToListAsync();
         }
 
+        // GET: Contributors
+        [HttpGet]
+        [Route("GetFullNames")]
+        public async Task<List<string>> GetFullNames()
+        {
+            return await _context.Contributor
+                .Where(x => x.Status == 1)
+                .Select(x => string.Concat(x.FirstName, " ", x.LastName))
+                .ToListAsync();
+        }
+
         // GET: api/Member/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Contributor>> Get(int id)
         {
             var contributor = await _context.Contributor.FindAsync(id);
 
-            if (contributor == null)
+            if (id == 0)
             {
-                return NotFound();
+                return BadRequest($"Member Id must be provided. It cannot be 0");
+            }
+            else if (contributor == null)
+            {
+                return NotFound($"Member Id [{id}] is invalid/cannot be found");
             }
 
             return contributor;
@@ -49,7 +64,7 @@ namespace Church.API.Controllers
         {
             if (id != contributor.ContributorId)
             {
-                return BadRequest();
+                return BadRequest("Invalid update request. Member Id does not match Member details object");
             }
 
             _context.Entry(contributor).Property(x => x.FirstName).IsModified = true;
@@ -63,9 +78,9 @@ namespace Church.API.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!ContributorExists(id))
+                if (!Utils.MemberExists(_context, id))
                 {
-                    return NotFound();
+                    return NotFound($"Member Id [{id}] is invalid/does not exist");
                 }
                 else
                 {
@@ -83,13 +98,17 @@ namespace Church.API.Controllers
             var contributor = await _context.Contributor.FindAsync(id);
             if (contributor == null)
             {
-                return NotFound();
+                return NotFound($"Member Id [{id}] is invalid/does not exist");
             }
 
-            if (!this.TransactionsExistForMemberId(id))
+            if (!Utils.TransactionsExistForMemberId(_context, id))
             {
                 _context.Contributor.Remove(contributor);
                 await _context.SaveChangesAsync();
+            }
+            else
+            {
+                return BadRequest($"Cannot delete Member Id [{id}]. It has transactions associated with it.");
             }
             
             return contributor;
@@ -98,6 +117,15 @@ namespace Church.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Contributor>> PostContributor(Contributor contributor)
         {
+            var existsMemberWithName = _context.Contributor
+                .Any(x => x.FirstName.Equals(contributor.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
+                            x.LastName.Equals(contributor.LastName, StringComparison.InvariantCultureIgnoreCase));
+
+            if (existsMemberWithName)
+            {
+                return BadRequest($"Member with the same name [{contributor.FirstName} {contributor.LastName}] already exists");
+            }
+
             contributor.ContributorId = Utils.GetNextIdAsync(_context, "contributor").Result;
             contributor.Status = 1;
 
@@ -108,16 +136,6 @@ namespace Church.API.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction("Get", new { id = contributor.ContributorId }, contributor);
-        }
-
-        private bool ContributorExists(int id)
-        {
-            return _context.Contributor.Any(e => e.ContributorId == id);
-        }
-
-        private bool TransactionsExistForMemberId(int MemberId)
-        {
-            return _context.Contribution.Any(e => e.ContributorId == MemberId);
         }
     }
 }

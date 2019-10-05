@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Church.API.Data
@@ -28,6 +29,40 @@ namespace Church.API.Data
             await dbContext.SaveChangesAsync();
 
             return tableNextIDObject.NextId;
+        }
+
+        /// <summary>
+        /// Check if Member exists 
+        /// </summary>
+        /// <param name="dbContext"></param>
+        /// <param name="memberId"></param>
+        /// <returns></returns>
+        public static bool MemberExists(IronChurchContext dbContext, int memberId)
+        {
+            return dbContext.Contributor.Any(e => e.ContributorId == memberId);
+        }
+
+        /// <summary>
+        /// Check if Transactions exist for Member Id
+        /// </summary>
+        /// <param name="dbContext"></param>
+        /// <param name="MemberId"></param>
+        /// <returns></returns>
+        public static bool TransactionsExistForMemberId(IronChurchContext dbContext, int MemberId)
+        {
+            return dbContext.Contribution.Any(e => e.ContributorId == MemberId);
+        }
+
+        public static string EncrytPassword(string inputString)
+        {
+            var crypt = new System.Security.Cryptography.SHA256Managed();
+            var hash = new System.Text.StringBuilder();
+            byte[] crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(inputString));
+            foreach (byte theByte in crypto)
+            {
+                hash.Append(theByte.ToString("x2"));
+            }
+            return hash.ToString();
         }
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Church.API.Data.DBContext;
 using Church.API.Models;
+using Newtonsoft.Json;
 
 namespace Church.API.Controllers
 {
@@ -28,7 +29,7 @@ namespace Church.API.Controllers
         {
             if (page == 0)
                 page = 1;
-            
+
             if (limit == 0)
                 limit = int.MaxValue;
 
@@ -42,6 +43,16 @@ namespace Church.API.Controllers
                 .ToList();
         }
 
+        [HttpGet]
+        public async Task<List<Contribution>> Get()
+        {
+            return await _context.Contribution
+                .Include(trans => trans.Contributor)
+                .Include(acc => acc.Account)
+                .Where(x => x.Status == 1)
+                .ToListAsync();
+        }
+
         // GET: api/Transactions/5
         [HttpGet("{id}")]
         public Contribution GetContribution(int id)
@@ -49,6 +60,7 @@ namespace Church.API.Controllers
             var contribution = _context.Contribution
                 .Where(x => x.ContributionId == id)
                 .Include(mem => mem.Contributor)
+                .Include(acc => acc.Account)
                 .FirstOrDefault();
 
             if (contribution == null)
@@ -57,61 +69,95 @@ namespace Church.API.Controllers
             return contribution;
         }
 
-        // PUT: api/Transactions/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutContribution(int id, Contribution contribution)
+        // GET: api/Transactions/5
+        [HttpGet]
+        [Route("GetAccountBalance")]
+        [Produces(typeof(Dictionary<string, decimal>))]
+        public Dictionary<string, decimal> GetAccountBalance()
         {
-            if (id != contribution.ContributionId)
+            var accountBalanceList = new Dictionary<string, decimal>();
+
+            var accountList = _context.Account.Where(x => x.Status == 1)
+                .ToList();
+
+            foreach (var account in accountList)
             {
-                return BadRequest();
+                var creditAmount = _context.Contribution
+                    .Where(c => c.AccountId == account.AccountId && c.Status == 1 && c.TransactionType == 1)
+                    .Sum(x => x.Amount);
+
+                var debitAmount = _context.Contribution
+                    .Where(c => c.AccountId == account.AccountId && c.Status == 1 && c.TransactionType == 2)
+                    .Sum(x => x.Amount);
+
+                var initialBalanceOnAccount = _context.Account
+                    .Where(x => x.AccountId == account.AccountId && x.Status == 1)
+                    .Select(x => x.InitialBalance)
+                    .FirstOrDefault();
+
+                var totalBalance = (creditAmount + initialBalanceOnAccount) - debitAmount;
+
+                accountBalanceList.Add(account.AccountName, totalBalance);
             }
 
-            _context.Entry(contribution).Property(x => x.ContributionName).IsModified = true;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ContributionExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return accountBalanceList;
         }
+
+        // PUT: api/Transactions/5
+        //[HttpPut("{id}")]
+        //public async Task<IActionResult> PutContribution(int id, Contribution contribution)
+        //{
+        //    if (id != contribution.ContributionId)
+        //    {
+        //        return BadRequest();
+        //    }
+
+        //    _context.Entry(contribution).Property(x => x.ContributionName).IsModified = true;
+
+        //    try
+        //    {
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        if (!ContributionExists(id))
+        //        {
+        //            return NotFound();
+        //        }
+        //        else
+        //        {
+        //            throw;
+        //        }
+        //    }
+
+        //    return NoContent();
+        //}
 
         // POST: api/Transactions
-        [HttpPost]
-        public async Task<ActionResult<Contribution>> PostContribution(Contribution contribution)
-        {
-            _context.Contribution.Add(contribution);
-            await _context.SaveChangesAsync();
+        //[HttpPost]
+        //public async Task<ActionResult<Contribution>> PostContribution(Contribution contribution)
+        //{
+        //    _context.Contribution.Add(contribution);
+        //    await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetContribution", new { id = contribution.ContributionId }, contribution);
-        }
+        //    return CreatedAtAction("GetContribution", new { id = contribution.ContributionId }, contribution);
+        //}
 
         // DELETE: api/Transactions/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<Contribution>> DeleteContribution(int id)
-        {
-            var contribution = await _context.Contribution.FindAsync(id);
-            if (contribution == null)
-            {
-                return NotFound();
-            }
+        //[HttpDelete("{id}")]
+        //public async Task<ActionResult<Contribution>> DeleteContribution(int id)
+        //{
+        //    var contribution = await _context.Contribution.FindAsync(id);
+        //    if (contribution == null)
+        //    {
+        //        return NotFound();
+        //    }
 
-            _context.Contribution.Remove(contribution);
-            await _context.SaveChangesAsync();
+        //    _context.Contribution.Remove(contribution);
+        //    await _context.SaveChangesAsync();
 
-            return contribution;
-        }
+        //    return contribution;
+        //}
 
         private bool ContributionExists(int id)
         {
