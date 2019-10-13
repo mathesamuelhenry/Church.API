@@ -35,7 +35,7 @@ namespace Church.API.Controllers
             return await _context.Users.ToListAsync();
         }
 
-        private Users GetUserObject(Register userRequest)
+        private Users GetUserObject(RegisterRequest userRequest)
         {
             if (userRequest == null)
                 throw new Exception("Request cannot be null");
@@ -97,12 +97,15 @@ namespace Church.API.Controllers
         /// <response code="500">Internal Server error</response>
         [HttpPost]
         [Route("Register")]
-        public async Task<ActionResult<Users>> Register(Users userRequest)
+        public async Task<ActionResult<Users>> Register(RegisterRequest userRequest)
         {
             string passwordHash = string.Empty;
+            Users userDbRequestObject = null;
 
             if (userRequest != null)
             {
+                userDbRequestObject = this.GetUserObject(userRequest);
+
                 var existsUser = this._context.Users
                     .Where(u => u.Email.Equals(userRequest.Email) && u.Status == userStatusActive)
                     .ToListAsync()
@@ -114,44 +117,42 @@ namespace Church.API.Controllers
                     if (!string.IsNullOrEmpty(userRequest.Password))
                     {
                         passwordHash = Utils.EncrytPassword(userRequest.Password);
-                        userRequest.Password = passwordHash;
-                        userRequest.UserId = Utils.GetNextIdAsync(_context, "users").Result;
-                        userRequest.DateAdded = DateTime.UtcNow;
+                        userDbRequestObject.Password = passwordHash;
+                        userDbRequestObject.UserId = Utils.GetNextIdAsync(_context, "users").Result;
+                        userDbRequestObject.DateAdded = DateTime.UtcNow;
 
-                        foreach (var userOrg in userRequest.UserOrganization)
+                        foreach (var userOrg in userDbRequestObject.UserOrganization)
                         {
                             if (userOrg.OrganizationId == 0)
                                 return BadRequest("Organization cannot be empty");
 
                             userOrg.UserOrganizationId = Utils.GetNextIdAsync(_context, "user_organization").Result;
-                            userOrg.UserId = userRequest.UserId;
+                            userOrg.UserId = userDbRequestObject.UserId;
                             userOrg.DateAdded = DateTime.UtcNow;
                             userOrg.UserAdded = string.IsNullOrEmpty(userOrg.UserAdded) ? userRequest.UserAdded : userOrg.UserAdded;
                         }
 
-                        foreach (var userRole in userRequest.UserRole)
+                        foreach (var userRole in userDbRequestObject.UserRole)
                         {
                             if (userRole.RoleId == 0)
                                 return BadRequest("Role Id cannot be empty");
 
                             userRole.UserRoleId = Utils.GetNextIdAsync(_context, "user_role").Result;
-                            userRole.UserId = userRequest.UserId;
+                            userRole.UserId = userDbRequestObject.UserId;
                             userRole.DateAdded = DateTime.UtcNow;
-                            userRole.UserAdded = userRequest.UserAdded;
                         }
 
-                        foreach (var userQuestion in userRequest.UserSecurityQuestion)
+                        foreach (var userQuestion in userDbRequestObject.UserSecurityQuestion)
                         {
                             if (userQuestion.SecurityQuestionId == 0)
                                 return BadRequest("question Id cannot be empty");
 
                             userQuestion.UserSecurityQuestionId = Utils.GetNextIdAsync(_context, "user_security_question").Result;
-                            userQuestion.UserId = userRequest.UserId;
+                            userQuestion.UserId = userDbRequestObject.UserId;
                             userQuestion.DateAdded = DateTime.UtcNow;
-                            userQuestion.UserAdded = userRequest.UserAdded;
                         }
 
-                        _context.Users.Add(userRequest);
+                        _context.Users.Add(userDbRequestObject);
 
                         await _context.SaveChangesAsync();
                     }
@@ -162,9 +163,9 @@ namespace Church.API.Controllers
                 }
             }
 
-            userRequest.Password = string.Empty;
+            userDbRequestObject.Password = string.Empty;
 
-            return CreatedAtAction("Get", new { id = userRequest.UserId }, userRequest);
+            return CreatedAtAction("Get", new { id = userDbRequestObject.UserId }, userDbRequestObject);
         }
 
         /// <summary>
