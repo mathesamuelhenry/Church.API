@@ -10,6 +10,8 @@ using Church.API.Data.DBContext;
 using Church.API.Models;
 using Church.API.Models.AppModel.Request;
 using Church.API.Models.AppModel.Request.User;
+using Church.API.Models.AppModel.Response;
+using Church.API.Models.AppModel.Response.GetUserResponse;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +34,60 @@ namespace Church.API.Controllers
         [HttpGet]
         public async Task<List<Users>> Get()
         {
-            return await _context.Users.ToListAsync();
+            return await _context.Users
+                .Include(org => org.UserOrganization)
+                .Include(role => role.UserRole)
+                .ToListAsync();
+        }
+
+        // GET: api/Users
+        [HttpGet("{id}")]
+        public async Task<UserResponse> Get(int id)
+        {
+            var userResponseResult = await _context.Users
+                .Include(org => org.UserOrganization)
+                .Include(role => role.UserRole)
+                .Where(x => x.UserId == id)
+                .FirstOrDefaultAsync();
+
+            List<UserOrganizationResponse> orgList = new List<UserOrganizationResponse>();
+
+            foreach (UserOrganization userOrg in userResponseResult.UserOrganization)
+            {
+                orgList.Add(new UserOrganizationResponse
+                {
+                    UserOrganizationId = userOrg.UserOrganizationId,
+                    OrganizationId = userOrg.OrganizationId,
+                    OrganizationName = _context.Organization
+                        .Where(x => x.OrganizationId == userOrg.OrganizationId)
+                        .FirstOrDefaultAsync().Result.Name
+                });
+            }
+
+            List<UserRoleResponse> roleList = new List<UserRoleResponse>();
+
+            foreach (UserRole userRole in userResponseResult.UserRole)
+            {
+                roleList.Add(new UserRoleResponse
+                {
+                    UserRoleId = userRole.UserRoleId,
+                    RoleId = userRole.RoleId,
+                    RoleName = _context.Role
+                        .Where(x => x.RoleId == userRole.RoleId)
+                        .FirstOrDefaultAsync().Result.RoleName
+                });
+            }
+
+            return new UserResponse
+            {
+                UserId = userResponseResult.UserId,
+                FirstName = userResponseResult.FirstName,
+                LastName = userResponseResult.LastName,
+                EmailId = userResponseResult.Email,
+                UserStatus = userResponseResult.Status,
+                UserOrganization = orgList,
+                UserRole = roleList
+            };
         }
 
         private Users GetUserObject(RegisterRequest userRequest)

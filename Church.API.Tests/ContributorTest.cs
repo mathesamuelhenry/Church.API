@@ -70,7 +70,7 @@ namespace Church.API.Tests
             {
                 MemberController contController = new MemberController(_context);
 
-                var testContributor = new Contributor { FirstName = "John", LastName = "Kenny", FamilyName = "Mathe", DateAdded = DateTime.Now };
+                var testContributor = new Contributor { FirstName = "John", LastName = "Kenny", FamilyName = "Mathe", DateAdded = DateTime.Now, Status = 1 };
 
                 var result = await contController.PostContributor(testContributor);
                 var currentCount = contController.Get().Result.Count;
@@ -87,8 +87,8 @@ namespace Church.API.Tests
 
             var _context = new IronChurchContext(options);
 
-            _context.Contributor.Add(new Contributor { ContributorId = 124, FirstName = "Samuel", LastName = "Henry", FamilyName = "Mathe" });
-            _context.Contributor.Add(new Contributor { ContributorId = 122, FirstName = "Sarah", LastName = "Solomon", FamilyName = "Mathe" });
+            _context.Contributor.Add(new Contributor { ContributorId = 124, FirstName = "Samuel", LastName = "Henry", FamilyName = "Mathe", Status = 1 });
+            _context.Contributor.Add(new Contributor { ContributorId = 122, FirstName = "Sarah", LastName = "Solomon", FamilyName = "Mathe", Status = 1 });
 
             _context.SeqControl.Add(new SeqControl { ObjName = "contributor", NextId = 150 });
 
