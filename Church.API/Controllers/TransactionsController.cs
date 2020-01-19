@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Church.API.Data.DBContext;
 using Church.API.Models;
 using Newtonsoft.Json;
+using Church.API.Data;
 
 namespace Church.API.Controllers
 {
@@ -55,16 +56,13 @@ namespace Church.API.Controllers
 
         // GET: api/Transactions/5
         [HttpGet("{id}")]
-        public Contribution GetContribution(int id)
+        public async Task<Contribution> GetContribution(int id)
         {
-            var contribution = _context.Contribution
+            var contribution = await _context.Contribution
                 .Where(x => x.ContributionId == id)
                 .Include(mem => mem.Contributor)
                 .Include(acc => acc.Account)
-                .FirstOrDefault();
-
-            if (contribution == null)
-            { }
+                .FirstOrDefaultAsync();
 
             return contribution;
         }
@@ -104,60 +102,105 @@ namespace Church.API.Controllers
         }
 
         // PUT: api/Transactions/5
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> PutContribution(int id, Contribution contribution)
-        //{
-        //    if (id != contribution.ContributionId)
-        //    {
-        //        return BadRequest();
-        //    }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutContribution(int id, Contribution contribution)
+        {
+            if (id != contribution.ContributionId)
+            {
+                return BadRequest();
+            }
 
-        //    _context.Entry(contribution).Property(x => x.ContributionName).IsModified = true;
+            _context.Entry(contribution).Property(x => x.ContributionName).IsModified = true;
+            _context.Entry(contribution).Property(x => x.AccountId).IsModified = true;
+            _context.Entry(contribution).Property(x => x.Amount).IsModified = true;
+            _context.Entry(contribution).Property(x => x.Category).IsModified = true;
+            _context.Entry(contribution).Property(x => x.CheckNumber).IsModified = true;
+            _context.Entry(contribution).Property(x => x.TransactionDate).IsModified = true;
+            _context.Entry(contribution).Property(x => x.TransactionMode).IsModified = true;
+            _context.Entry(contribution).Property(x => x.TransactionType).IsModified = true;
+            _context.Entry(contribution).Property(x => x.Note).IsModified = true;
+            _context.Entry(contribution).Property(x => x.DateChanged).IsModified = true;
+            // TODO : Add User Changed
 
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        if (!ContributionExists(id))
-        //        {
-        //            return NotFound();
-        //        }
-        //        else
-        //        {
-        //            throw;
-        //        }
-        //    }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ContributionExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
-        // POST: api/Transactions
-        //[HttpPost]
-        //public async Task<ActionResult<Contribution>> PostContribution(Contribution contribution)
-        //{
-        //    _context.Contribution.Add(contribution);
-        //    await _context.SaveChangesAsync();
+        [HttpPut]
+        [Route("GetAccountBalance/{id}")]
+        public async Task<IActionResult> DeactivateTransaction(int id)
+        {
+            var contribution = await _context.Contribution
+                .Where(x => x.ContributionId == id)
+                .FirstOrDefaultAsync();
 
-        //    return CreatedAtAction("GetContribution", new { id = contribution.ContributionId }, contribution);
-        //}
+            _context.Entry(contribution).Property(x => x.Status).IsModified = true;
+            _context.Entry(contribution).Property(x => x.DateChanged).IsModified = true;
+            // TODO : Add User Changed
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ContributionExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        /// POST: api/Transactions
+        [HttpPost]
+        public async Task<ActionResult<Contribution>> PostContribution(Contribution contribution)
+        {
+            contribution.ContributionId = Utils.GetNextIdAsync(_context, "contribution").Result;
+            contribution.Status = 1;
+            contribution.DateAdded = DateTime.UtcNow;
+
+            _context.Contribution.Add(contribution);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetContribution", new { id = contribution.ContributionId }, contribution);
+        }
 
         // DELETE: api/Transactions/5
-        //[HttpDelete("{id}")]
-        //public async Task<ActionResult<Contribution>> DeleteContribution(int id)
-        //{
-        //    var contribution = await _context.Contribution.FindAsync(id);
-        //    if (contribution == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Contribution>> DeleteContribution(int id)
+        {
+            var contribution = await _context.Contribution.FindAsync(id);
+            if (contribution == null)
+            {
+                return NotFound();
+            }
 
-        //    _context.Contribution.Remove(contribution);
-        //    await _context.SaveChangesAsync();
+            _context.Contribution.Remove(contribution);
+            await _context.SaveChangesAsync();
 
-        //    return contribution;
-        //}
+            return contribution;
+        }
 
         private bool ContributionExists(int id)
         {

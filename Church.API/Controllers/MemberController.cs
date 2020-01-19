@@ -128,6 +128,7 @@ namespace Church.API.Controllers
 
             contributor.ContributorId = Utils.GetNextIdAsync(_context, "contributor").Result;
             contributor.Status = 1;
+            contributor.DateAdded = DateTime.UtcNow;
 
             _context.Contributor.Add(contributor);
             if (string.IsNullOrEmpty(contributor.FamilyName))
