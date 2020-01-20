@@ -29,11 +29,17 @@ namespace Church.API.Tests.Base
              */
             _context.SeqControl.Add(new SeqControl { ObjName = "contributor", NextId = 150 });
             _context.SeqControl.Add(new SeqControl { ObjName = "account", NextId = 30 });
+            _context.SeqControl.Add(new SeqControl { ObjName = "organization", NextId = 30 });
 
             /*
              Mock Account Data
              */
             _context.Account.Add(new Account { AccountId = 21, AccountName = "Bank 1", AccountNumber = "1234", BankName = "BOFA", InitialBalance = 4444m});
+
+            /*
+             Mock Organizations Data
+             */
+            _context.Organization.Add(new Organization { OrganizationId = 1, Name = "Sam Test", Website = "www.sam.com", AddressLine1 = "10 Downing Street", City = "Boca Raton", State = "Fl" });
             
             _context.SaveChanges();
 
