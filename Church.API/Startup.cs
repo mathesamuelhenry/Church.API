@@ -58,8 +58,7 @@ namespace Church.API
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
             });
 
-            services.AddDbContext<IronChurchContext>(options => 
-                options.UseMySql(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContext<IronChurchContext>(options => options.UseMySql(Configuration.GetConnectionString("DevConnection")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -64,5 +64,17 @@ namespace Church.API.Data
             }
             return hash.ToString();
         }
+
+        public static bool ValidOrganization(Organization organization, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (string.IsNullOrEmpty(organization.Name))
+            {
+                errorMessage = "Organization name cannot be empty";
+                return false;
+            }
+
+            return true;
+        }
     }
 }

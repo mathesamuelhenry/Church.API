@@ -31,66 +31,131 @@ namespace Church.API.Controllers
         }
 
         // GET: api/Users
-        [HttpGet]
-        public async Task<List<Users>> Get()
+        /*[HttpGet]
+        public async Task<List<UserResponse>> Get()
         {
-            return await _context.Users
-                .Include(org => org.UserOrganization)
-                .Include(role => role.UserRole)
+            var userOrgList = await _context.UserOrganization
+                .Include(org => org.Organization)
+                .OrderBy(x => x.AuthUserId)
+                .GroupBy(x => x.AuthUserId)
                 .ToListAsync();
-        }
+
+            var authUserList = await _authContext.AuthUser
+                .ToListAsync();
+
+            var userRoleList = await _authContext.UserRole
+                .Include(role => role.Role)
+                .ToListAsync();
+
+            var query = from authUser in authUserList
+                           join user in userOrgList
+                           on authUser.AuthUserId equals user.Key
+                           select new
+                           {
+                               UserId = user.Key,
+                               EmailId = authUser.Email,
+                               authUser.FirstName,
+                               authUser.LastName,
+                               UserStatus = authUser.Status,
+                               UserOrg = user
+                           };
+
+            var userResponseList = new List<UserResponse>();
+            var userOrganizationResponseList = new List<UserOrganizationResponse>();
+
+            foreach (var userInfo in query)
+            {
+                var userResponse = new UserResponse()
+                {
+                    UserId = userInfo.UserId,
+                    FirstName = userInfo.FirstName,
+                    LastName = userInfo.LastName,
+                    UserStatus = userInfo.UserStatus,
+                    EmailId = userInfo.EmailId,
+                    UserOrganization = userInfo.UserOrg.AsEnumerable().Select(x => new UserOrganizationResponse
+                    {
+                        UserOrganizationId = x.UserOrganizationId,
+                        OrganizationId = x.OrganizationId,
+                        OrganizationName = x.Organization.Name
+                    }).ToList(),
+                    UserRole = userRoleList.Where(x => x.AuthUserId == userInfo.UserId).Select(x => new UserRoleResponse
+                    {
+                        RoleId = x.RoleId,
+                        UserRoleId = x.UserRoleId,
+                        RoleName = x.Role.RoleName
+                    }).ToList()
+                };
+
+                userResponseList.Add(userResponse);
+            };
+            
+            return userResponseList;
+        }*/
 
         // GET: api/Users
-        [HttpGet("{id}")]
+        /*[HttpGet("{id}")]
         public async Task<UserResponse> Get(int id)
         {
-            var userResponseResult = await _context.Users
-                .Include(org => org.UserOrganization)
-                .Include(role => role.UserRole)
-                .Where(x => x.UserId == id)
-                .FirstOrDefaultAsync();
+            var userOrgList = await _context.UserOrganization
+                .Include(org => org.Organization)
+                .Where(x => x.AuthUserId == id)
+                .OrderBy(x => x.AuthUserId)
+                .GroupBy(x => x.AuthUserId)
+                .ToListAsync();
 
-            List<UserOrganizationResponse> orgList = new List<UserOrganizationResponse>();
+            var authUserList = await _authContext.AuthUser
+                .Where(x => x.AuthUserId == id)
+                .ToListAsync();
 
-            foreach (UserOrganization userOrg in userResponseResult.UserOrganization)
+            var userRoleList = await _authContext.UserRole
+                .Include(role => role.Role)
+                .Where(x => x.AuthUserId == id)
+                .ToListAsync();
+
+            var query = from authUser in authUserList
+                        join user in userOrgList
+                        on authUser.AuthUserId equals user.Key
+                        select new
+                        {
+                            UserId = user.Key,
+                            EmailId = authUser.Email,
+                            authUser.FirstName,
+                            authUser.LastName,
+                            UserStatus = authUser.Status,
+                            UserOrg = user
+                        };
+
+            UserResponse userResponse = null;
+            var userOrganizationResponseList = new List<UserOrganizationResponse>();
+
+            foreach (var userInfo in query)
             {
-                orgList.Add(new UserOrganizationResponse
+                userResponse = new UserResponse()
                 {
-                    UserOrganizationId = userOrg.UserOrganizationId,
-                    OrganizationId = userOrg.OrganizationId,
-                    OrganizationName = _context.Organization
-                        .Where(x => x.OrganizationId == userOrg.OrganizationId)
-                        .FirstOrDefaultAsync().Result.Name
-                });
-            }
-
-            List<UserRoleResponse> roleList = new List<UserRoleResponse>();
-
-            foreach (UserRole userRole in userResponseResult.UserRole)
-            {
-                roleList.Add(new UserRoleResponse
-                {
-                    UserRoleId = userRole.UserRoleId,
-                    RoleId = userRole.RoleId,
-                    RoleName = _context.Role
-                        .Where(x => x.RoleId == userRole.RoleId)
-                        .FirstOrDefaultAsync().Result.RoleName
-                });
-            }
-
-            return new UserResponse
-            {
-                UserId = userResponseResult.UserId,
-                FirstName = userResponseResult.FirstName,
-                LastName = userResponseResult.LastName,
-                EmailId = userResponseResult.Email,
-                UserStatus = userResponseResult.Status,
-                UserOrganization = orgList,
-                UserRole = roleList
+                    UserId = userInfo.UserId,
+                    FirstName = userInfo.FirstName,
+                    LastName = userInfo.LastName,
+                    UserStatus = userInfo.UserStatus,
+                    EmailId = userInfo.EmailId,
+                    UserOrganization = userInfo.UserOrg.AsEnumerable().Select(x => new UserOrganizationResponse
+                    {
+                        UserOrganizationId = x.UserOrganizationId,
+                        OrganizationId = x.OrganizationId,
+                        OrganizationName = x.Organization.Name
+                    }).ToList(),
+                    UserRole = userRoleList.Where(x => x.AuthUserId == userInfo.UserId).Select(x => new UserRoleResponse
+                    {
+                        RoleId = x.RoleId,
+                        UserRoleId = x.UserRoleId,
+                        RoleName = x.Role.RoleName
+                    }).ToList()
+                };
             };
-        }
 
-        private Users GetUserObject(RegisterRequest userRequest)
+            return userResponse;
+        }*/
+
+        /*private Users GetUserObject(RegisterRequest userRequest)
         {
             if (userRequest == null)
                 throw new Exception("Request cannot be null");
@@ -155,26 +220,46 @@ namespace Church.API.Controllers
         public async Task<ActionResult<Users>> Register(RegisterRequest userRequest)
         {
             string passwordHash = string.Empty;
-            Users userDbRequestObject = null;
-
+            AuthUser currentAuthUserModel = new AuthUser();
+            UserOrganization currentUserOrgModel = new UserOrganization();
+            AuthUser newAuthUserModel = new AuthUser();
+            UserOrganization newUserOrgModel = new UserOrganization();
             if (userRequest != null)
             {
-                userDbRequestObject = this.GetUserObject(userRequest);
+                currentAuthUserModel = this._authContext.AuthUser
+                    .Where(x => x.Email == userRequest.Email)
+                    .FirstOrDefault();
 
-                var existsUser = this._context.Users
-                    .Where(u => u.Email.Equals(userRequest.Email) && u.Status == userStatusActive)
+                var authUserId = currentAuthUserModel?.AuthUserId;
+
+                currentUserOrgModel = this._context.UserOrganization
+                    .Include(x => x.AuthUserId == authUserId)
+                    .FirstOrDefault();
+                
+                var existsUser = this._authContext.AuthUser
+                    .Where(x => x.Email.Equals(userRequest.Email, StringComparison.InvariantCultureIgnoreCase))
                     .ToListAsync()
                     .Result
                     .Count > 0;
+
+                var authGroupId = this._authContext.AuthGroup
+                    .Where(x => x.AuthGroupName == userRequest.AuthGroupName)
+                    .FirstOrDefault()
+                    .AuthGroupId;
                 
                 if (!existsUser)
                 {
                     if (!string.IsNullOrEmpty(userRequest.Password))
                     {
                         passwordHash = Utils.EncrytPassword(userRequest.Password);
-                        userDbRequestObject.Password = passwordHash;
-                        userDbRequestObject.UserId = Utils.GetNextIdAsync(_context, "users").Result;
-                        userDbRequestObject.DateAdded = DateTime.UtcNow;
+                        newAuthUserModel.Password = passwordHash;
+                        newAuthUserModel.AuthUserId = Utils.GetNextIdAsync(_context, "users").Result;
+                        newAuthUserModel.DateAdded = DateTime.UtcNow;
+                        newAuthUserModel.FirstName = userRequest.FirstName;
+                        newAuthUserModel.LastName = userRequest.LastName;
+                        newAuthUserModel.Status = userRequest.Status;
+                        newAuthUserModel.AuthGroupId = authGroupId;
+                        newAuthUserModel.UserAdded = userRequest.UserAdded;
 
                         foreach (var userOrg in userDbRequestObject.UserOrganization)
                         {
@@ -182,7 +267,7 @@ namespace Church.API.Controllers
                                 return BadRequest("Organization cannot be empty");
 
                             userOrg.UserOrganizationId = Utils.GetNextIdAsync(_context, "user_organization").Result;
-                            userOrg.UserId = userDbRequestObject.UserId;
+                            userOrg.AuthUserId = userDbRequestObject.UserId;
                             userOrg.DateAdded = DateTime.UtcNow;
                             userOrg.UserAdded = string.IsNullOrEmpty(userOrg.UserAdded) ? userRequest.UserAdded : userOrg.UserAdded;
                         }
@@ -221,14 +306,14 @@ namespace Church.API.Controllers
             userDbRequestObject.Password = string.Empty;
 
             return CreatedAtAction("Get", new { id = userDbRequestObject.UserId }, userDbRequestObject);
-        }
+        }*/
 
         /// <summary>
         /// Authenticate
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        [HttpPost]
+        /*[HttpPost]
         [Route("Authenticate")]
         public async Task<ActionResult<Users>> Authenticate(SignIn request)
         {
@@ -258,7 +343,7 @@ namespace Church.API.Controllers
             currentUserInfo.Password = string.Empty;
 
             return CreatedAtAction("Get", new { id = currentUserInfo.UserId }, currentUserInfo);
-        }
+        }*/
 
 
         /// <summary>
@@ -266,7 +351,7 @@ namespace Church.API.Controllers
         /// </summary>
         /// <response code="200">Ok</response>
         /// <response code="500">Internal Server error</response>
-        [HttpPost]
+        /*[HttpPost]
         [Route("ChangePassword")]
         public async Task<IActionResult> ChangePassword(ChangePasswordFromOriginal request)
         {
@@ -319,6 +404,6 @@ namespace Church.API.Controllers
             }
 
             return NoContent();
-        }
+        }*/
     }
 }
