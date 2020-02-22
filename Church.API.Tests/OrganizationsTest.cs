@@ -28,7 +28,7 @@ namespace Church.API.Tests
             {
                 OrganizationsController orgController = new OrganizationsController(_context);
 
-                var ExpectedOrg = new Organization { Name = "Sam Test 1", Website = "www.sam.com", AddressLine1 = "10 Downing Street", City = "Boca Raton", State = "Fl" };
+                var ExpectedOrg = new Organization { Name = "Sam Test 1" };
 
                 var result = await orgController.PostOrganization(ExpectedOrg);
                 var ActualOrganization = orgController.GetOrganization().Result.Where(x => x.OrganizationId == 31).FirstOrDefault();

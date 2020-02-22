@@ -39,7 +39,7 @@ namespace Church.API.Tests.Base
             /*
              Mock Organizations Data
              */
-            _context.Organization.Add(new Organization { OrganizationId = 1, Name = "Sam Test", Website = "www.sam.com", AddressLine1 = "10 Downing Street", City = "Boca Raton", State = "Fl" });
+            _context.Organization.Add(new Organization { OrganizationId = 1, Name = "Sam Test" });
             
             _context.SaveChanges();
 

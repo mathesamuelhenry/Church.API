@@ -77,6 +77,9 @@ namespace Church.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Organization>> PostOrganization(Organization organization)
         {
+            if (!Utils.ValidOrganization(organization, out string errorMessage))
+                return BadRequest(errorMessage);
+
             var existsOrganization = _context.Organization
                 .Any(x => x.Name.Equals(organization.Name, StringComparison.InvariantCultureIgnoreCase));
 
@@ -88,10 +91,6 @@ namespace Church.API.Controllers
             organization.OrganizationId = Utils.GetNextIdAsync(_context, "organization").Result;
             organization.DateAdded = DateTime.UtcNow;
             organization.Phone = string.IsNullOrWhiteSpace(organization.Phone) ? null : organization.Phone;
-            organization.AddressLine2 = string.IsNullOrWhiteSpace(organization.AddressLine2) ? null : organization.AddressLine2;
-            organization.AddressLine3 = string.IsNullOrWhiteSpace(organization.AddressLine3) ? null : organization.AddressLine3;
-            organization.Website = string.IsNullOrWhiteSpace(organization.Website) ? null : organization.Website;
-            organization.Zip4 = string.IsNullOrWhiteSpace(organization.Zip4) ? null : organization.Zip4;
             organization.Email = string.IsNullOrWhiteSpace(organization.Email) ? null : organization.Email;
 
             _context.Organization.Add(organization);

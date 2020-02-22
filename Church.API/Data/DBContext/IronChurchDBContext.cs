@@ -23,6 +23,7 @@ namespace Church.API.Data.DBContext
         public virtual DbSet<ContributorLoan> ContributorLoan { get; set; }
         public virtual DbSet<Kvp> Kvp { get; set; }
         public virtual DbSet<Organization> Organization { get; set; }
+        public virtual DbSet<OrganizationCategory> OrganizationCategory { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<SecurityQuestion> SecurityQuestion { get; set; }
         public virtual DbSet<SeqControl> SeqControl { get; set; }
@@ -340,24 +341,6 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("organization_id")
                     .HasColumnType("int(11)");
 
-                entity.Property(e => e.AddressLine1)
-                    .IsRequired()
-                    .HasColumnName("address_line_1")
-                    .HasColumnType("varchar(60)");
-
-                entity.Property(e => e.AddressLine2)
-                    .HasColumnName("address_line_2")
-                    .HasColumnType("varchar(60)");
-
-                entity.Property(e => e.AddressLine3)
-                    .HasColumnName("address_line_3")
-                    .HasColumnType("varchar(60)");
-
-                entity.Property(e => e.City)
-                    .IsRequired()
-                    .HasColumnName("city")
-                    .HasColumnType("varchar(35)");
-
                 entity.Property(e => e.DateAdded)
                     .HasColumnName("date_added")
                     .HasColumnType("datetime");
@@ -384,9 +367,48 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("phone")
                     .HasColumnType("varchar(15)");
 
-                entity.Property(e => e.State)
-                    .HasColumnName("state")
-                    .HasColumnType("varchar(3)");
+                entity.Property(e => e.UserAdded)
+                    .IsRequired()
+                    .HasColumnName("user_added")
+                    .HasColumnType("varchar(255)");
+
+                entity.Property(e => e.UserChanged)
+                    .HasColumnName("user_changed")
+                    .HasColumnType("varchar(255)");
+            });
+
+            modelBuilder.Entity<OrganizationCategory>(entity =>
+            {
+                entity.ToTable("organization_category");
+
+                entity.HasIndex(e => e.OrganizationId)
+                    .HasName("org_category_ocfk_1");
+
+                entity.Property(e => e.OrganizationCategoryId)
+                    .HasColumnName("organization_category_id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.CategoryName)
+                    .IsRequired()
+                    .HasColumnName("category_name")
+                    .HasColumnType("varchar(40)");
+
+                entity.Property(e => e.DateAdded)
+                    .HasColumnName("date_added")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.DateChanged)
+                    .HasColumnName("date_changed")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.IsActive)
+                    .HasColumnName("is_active")
+                    .HasColumnType("tinyint(4)")
+                    .HasDefaultValueSql("'1'");
+
+                entity.Property(e => e.OrganizationId)
+                    .HasColumnName("organization_id")
+                    .HasColumnType("int(11)");
 
                 entity.Property(e => e.UserAdded)
                     .IsRequired()
@@ -397,18 +419,11 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("user_changed")
                     .HasColumnType("varchar(255)");
 
-                entity.Property(e => e.Website)
-                    .HasColumnName("website")
-                    .HasColumnType("varchar(50)");
-
-                entity.Property(e => e.Zip)
-                    .IsRequired()
-                    .HasColumnName("zip")
-                    .HasColumnType("varchar(10)");
-
-                entity.Property(e => e.Zip4)
-                    .HasColumnName("zip4")
-                    .HasColumnType("varchar(4)");
+                /*entity.HasOne(d => d.Organization)
+                    .WithMany(p => p.OrganizationCategory)
+                    .HasForeignKey(d => d.OrganizationId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("org_category_ocfk_1");*/
             });
 
             modelBuilder.Entity<Users>(entity =>
@@ -477,12 +492,16 @@ namespace Church.API.Data.DBContext
                 entity.HasIndex(e => e.OrganizationId)
                     .HasName("organization_id");
 
-                entity.HasIndex(e => new { e.UserId, e.OrganizationId })
+                entity.HasIndex(e => new { e.AuthUserId, e.OrganizationId })
                     .HasName("user_id")
                     .IsUnique();
 
                 entity.Property(e => e.UserOrganizationId)
                     .HasColumnName("user_organization_id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.AuthUserId)
+                    .HasColumnName("auth_user_id")
                     .HasColumnType("int(11)");
 
                 entity.Property(e => e.DateAdded)
@@ -506,21 +525,11 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("user_changed")
                     .HasColumnType("varchar(255)");
 
-                entity.Property(e => e.UserId)
-                    .HasColumnName("user_id")
-                    .HasColumnType("int(11)");
-
                 /*entity.HasOne(d => d.Organization)
                     .WithMany(p => p.UserOrganization)
                     .HasForeignKey(d => d.OrganizationId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("user_organization_ibfk_2");
-
-                entity.HasOne(d => d.User)
-                    .WithMany(p => p.UserOrganization)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("user_organization_ibfk_1");*/
+                    .HasConstraintName("user_organization_ibfk_2");*/
             });
 
             modelBuilder.Entity<Kvp>(entity =>
