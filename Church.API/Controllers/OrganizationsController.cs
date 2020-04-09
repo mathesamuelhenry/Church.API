@@ -26,14 +26,19 @@ namespace Church.API.Controllers
         [HttpGet]
         public async Task<List<Organization>> GetOrganization()
         {
-            return await _context.Organization.ToListAsync(); 
+            return await _context.Organization
+                .Include(x => x.Industry)
+                .ToListAsync(); 
         }
 
         // GET: api/Organizations/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Organization>> GetOrganization(int id)
         {
-            var organization = await _context.Organization.FindAsync(id);
+            var organization = await _context.Organization
+                .Include(x => x.Industry)
+                .Where(x => x.OrganizationId == id)
+                .FirstOrDefaultAsync();
 
             if (organization == null)
             {
@@ -77,16 +82,19 @@ namespace Church.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Organization>> PostOrganization(Organization organization)
         {
-            if (!Utils.ValidOrganization(organization, out string errorMessage))
-                return BadRequest(errorMessage);
+            if (string.IsNullOrEmpty(organization.Name))
+                return BadRequest("Organization name cannot be empty");
+
+            if (organization.IndustryId == 0)
+                return BadRequest("Organization name cannot be empty");
+            else if (await _context.Industry.FindAsync(organization.IndustryId) == null)
+                return NotFound("Invalid Industry/Not found");
+
+            if (string.IsNullOrEmpty(organization.UserAdded))
+                return BadRequest("User Added cannot be empty");
 
             var existsOrganization = _context.Organization
                 .Any(x => x.Name.Equals(organization.Name, StringComparison.InvariantCultureIgnoreCase));
-
-            if (existsOrganization)
-            {
-                return BadRequest($"Organization with the same name [{organization.Name}] already exists");
-            }
 
             organization.OrganizationId = Utils.GetNextIdAsync(_context, "organization").Result;
             organization.DateAdded = DateTime.UtcNow;

@@ -47,19 +47,14 @@ namespace Church.API.Controllers
         }
 
         [HttpGet]
-        [Route("GetCategoryByOrganizationId")]
-        public async Task<ActionResult<OrganizationCategory>> GetCategoryByOrganizationId(int orgId)
+        [Route("GetCategoryListByOrganizationId/{orgId}")]
+        public async Task<ActionResult<List<OrganizationCategory>>> GetCategoryByOrganizationId(int orgId)
         {
-            var organizationCategory = await _context.OrganizationCategory
+            var organizationCategoryList = await _context.OrganizationCategory
                 .Where(x => x.OrganizationId == orgId && x.IsActive == 1)
-                .FirstOrDefaultAsync();
+                .ToListAsync();
 
-            if (organizationCategory == null)
-            {
-                return NotFound();
-            }
-
-            return organizationCategory;
+            return organizationCategoryList;
         }
 
         // PUT: api/OrganizationCategories/5

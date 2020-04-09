@@ -22,16 +22,12 @@ namespace Church.API.Data.DBContext
         public virtual DbSet<Contributor> Contributor { get; set; }
         public virtual DbSet<ContributorLoan> ContributorLoan { get; set; }
         public virtual DbSet<Kvp> Kvp { get; set; }
+        public virtual DbSet<Industry> Industry { get; set; }
         public virtual DbSet<Organization> Organization { get; set; }
         public virtual DbSet<OrganizationCategory> OrganizationCategory { get; set; }
-        public virtual DbSet<Role> Role { get; set; }
-        public virtual DbSet<SecurityQuestion> SecurityQuestion { get; set; }
         public virtual DbSet<SeqControl> SeqControl { get; set; }
         public virtual DbSet<TableColumn> TableColumn { get; set; }
         public virtual DbSet<UserOrganization> UserOrganization { get; set; }
-        public virtual DbSet<UserRole> UserRole { get; set; }
-        public virtual DbSet<UserSecurityQuestion> UserSecurityQuestion { get; set; }
-        public virtual DbSet<Users> Users { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -333,6 +329,9 @@ namespace Church.API.Data.DBContext
             {
                 entity.ToTable("organization");
 
+                entity.HasIndex(e => e.IndustryId)
+                    .HasName("industry_fk1");
+
                 entity.HasIndex(e => e.Name)
                     .HasName("name")
                     .IsUnique();
@@ -353,10 +352,9 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("email")
                     .HasColumnType("varchar(50)");
 
-                entity.Property(e => e.Industry)
-                    .IsRequired()
-                    .HasColumnName("industry")
-                    .HasColumnType("varchar(50)");
+                entity.Property(e => e.IndustryId)
+                    .HasColumnName("industry_id")
+                    .HasColumnType("int(11)");
 
                 entity.Property(e => e.Name)
                     .IsRequired()
@@ -424,65 +422,6 @@ namespace Church.API.Data.DBContext
                     .HasForeignKey(d => d.OrganizationId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("org_category_ocfk_1");*/
-            });
-
-            modelBuilder.Entity<Users>(entity =>
-            {
-                entity.HasKey(e => e.UserId)
-                    .HasName("PRIMARY");
-
-                entity.ToTable("users");
-
-                entity.HasIndex(e => e.Email)
-                    .HasName("email")
-                    .IsUnique();
-
-                entity.Property(e => e.UserId)
-                    .HasColumnName("user_id")
-                    .HasColumnType("int(11)");
-
-                entity.Property(e => e.DateAdded)
-                    .HasColumnName("date_added")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.DateChanged)
-                    .HasColumnName("date_changed")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.Email)
-                    .IsRequired()
-                    .HasColumnName("email")
-                    .HasColumnType("varchar(50)");
-
-                entity.Property(e => e.FirstName)
-                    .IsRequired()
-                    .HasColumnName("first_name")
-                    .HasColumnType("varchar(50)");
-
-                entity.Property(e => e.LastName)
-                    .IsRequired()
-                    .HasColumnName("last_name")
-                    .HasColumnType("varchar(50)");
-
-                entity.Property(e => e.Password)
-                    .IsRequired()
-                    .HasColumnName("password")
-                    .HasColumnType("varchar(100)");
-
-                entity.Property(e => e.Status)
-                    .IsRequired()
-                    .HasColumnName("status")
-                    .HasColumnType("varchar(2)")
-                    .HasDefaultValueSql("'A'");
-
-                entity.Property(e => e.UserAdded)
-                    .IsRequired()
-                    .HasColumnName("user_added")
-                    .HasColumnType("varchar(255)");
-
-                entity.Property(e => e.UserChanged)
-                    .HasColumnName("user_changed")
-                    .HasColumnType("varchar(255)");
             });
 
             modelBuilder.Entity<UserOrganization>(entity =>
@@ -576,12 +515,12 @@ namespace Church.API.Data.DBContext
                     .HasColumnType("varchar(255)");
             });
 
-            modelBuilder.Entity<Role>(entity =>
+            modelBuilder.Entity<Industry>(entity =>
             {
-                entity.ToTable("role");
+                entity.ToTable("industry");
 
-                entity.Property(e => e.RoleId)
-                    .HasColumnName("role_id")
+                entity.Property(e => e.IndustryId)
+                    .HasColumnName("industry_id")
                     .HasColumnType("int(11)");
 
                 entity.Property(e => e.DateAdded)
@@ -592,10 +531,10 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("date_changed")
                     .HasColumnType("datetime");
 
-                entity.Property(e => e.RoleName)
+                entity.Property(e => e.IndustryName)
                     .IsRequired()
-                    .HasColumnName("role_name")
-                    .HasColumnType("varchar(40)");
+                    .HasColumnName("industry_name")
+                    .HasColumnType("varchar(50)");
 
                 entity.Property(e => e.UserAdded)
                     .IsRequired()
@@ -605,137 +544,6 @@ namespace Church.API.Data.DBContext
                 entity.Property(e => e.UserChanged)
                     .HasColumnName("user_changed")
                     .HasColumnType("varchar(255)");
-            });
-
-            modelBuilder.Entity<SecurityQuestion>(entity =>
-            {
-                entity.ToTable("security_question");
-
-                entity.Property(e => e.SecurityQuestionId)
-                    .HasColumnName("security_question_id")
-                    .HasColumnType("int(11)");
-
-                entity.Property(e => e.DateAdded)
-                    .HasColumnName("date_added")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.DateChanged)
-                    .HasColumnName("date_changed")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.Question)
-                    .IsRequired()
-                    .HasColumnName("question")
-                    .HasColumnType("varchar(255)");
-            });
-
-            modelBuilder.Entity<UserRole>(entity =>
-            {
-                entity.ToTable("user_role");
-
-                entity.HasIndex(e => e.RoleId)
-                    .HasName("role_id_urfk_1");
-
-                entity.HasIndex(e => e.UserId)
-                    .HasName("user_id_urfk_1");
-
-                entity.Property(e => e.UserRoleId)
-                    .HasColumnName("user_role_id")
-                    .HasColumnType("int(11)");
-
-                entity.Property(e => e.DateAdded)
-                    .HasColumnName("date_added")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.DateChanged)
-                    .HasColumnName("date_changed")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.RoleId)
-                    .HasColumnName("role_id")
-                    .HasColumnType("int(11)");
-
-                entity.Property(e => e.UserAdded)
-                    .IsRequired()
-                    .HasColumnName("user_added")
-                    .HasColumnType("varchar(255)");
-
-                entity.Property(e => e.UserChanged)
-                    .HasColumnName("user_changed")
-                    .HasColumnType("varchar(255)");
-
-                entity.Property(e => e.UserId)
-                    .HasColumnName("user_id")
-                    .HasColumnType("int(11)");
-
-                /*entity.HasOne(d => d.Role)
-                    .WithMany(p => p.UserRole)
-                    .HasForeignKey(d => d.RoleId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("role_id_urfk_1");
-
-                entity.HasOne(d => d.User)
-                    .WithMany(p => p.UserRole)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("user_id_urfk_1");*/
-            });
-
-            modelBuilder.Entity<UserSecurityQuestion>(entity =>
-            {
-                entity.ToTable("user_security_question");
-
-                entity.HasIndex(e => e.SecurityQuestionId)
-                    .HasName("security_question_id_usqfk_1");
-
-                entity.HasIndex(e => e.UserId)
-                    .HasName("user_id_usqfk_1");
-
-                entity.Property(e => e.UserSecurityQuestionId)
-                    .HasColumnName("user_security_question_id")
-                    .HasColumnType("int(11)");
-
-                entity.Property(e => e.Answer)
-                    .IsRequired()
-                    .HasColumnName("answer")
-                    .HasColumnType("varchar(255)");
-
-                entity.Property(e => e.DateAdded)
-                    .HasColumnName("date_added")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.DateChanged)
-                    .HasColumnName("date_changed")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.SecurityQuestionId)
-                    .HasColumnName("security_question_id")
-                    .HasColumnType("int(11)");
-
-                entity.Property(e => e.UserAdded)
-                    .IsRequired()
-                    .HasColumnName("user_added")
-                    .HasColumnType("varchar(255)");
-
-                entity.Property(e => e.UserChanged)
-                    .HasColumnName("user_changed")
-                    .HasColumnType("varchar(255)");
-
-                entity.Property(e => e.UserId)
-                    .HasColumnName("user_id")
-                    .HasColumnType("int(11)");
-
-                /*entity.HasOne(d => d.SecurityQuestion)
-                    .WithMany(p => p.UserSecurityQuestion)
-                    .HasForeignKey(d => d.SecurityQuestionId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("security_question_id_usqfk_1");
-
-                entity.HasOne(d => d.User)
-                    .WithMany(p => p.UserSecurityQuestion)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("user_id_usqfk_1");*/
             });
         }
     }
