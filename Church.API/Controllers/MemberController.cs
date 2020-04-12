@@ -29,6 +29,15 @@ namespace Church.API.Controllers
             return await _context.Contributor.Where(x => x.Status == 1).ToListAsync();
         }
 
+        [HttpGet]
+        [Route("GetByOrganizationId/{orgId}")]
+        public async Task<List<Contributor>> GetByOrganizationId(int orgId)
+        {
+            return await _context.Contributor
+                .Where(x => x.Status == 1 && x.OrganizationId == orgId)
+                .ToListAsync();
+        }
+
         // GET: Contributors
         [HttpGet]
         [Route("GetFullNamesByOrganizationId/{orgId}")]
