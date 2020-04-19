@@ -29,13 +29,22 @@ namespace Church.API.Controllers
             return await _context.Contributor.Where(x => x.Status == 1).ToListAsync();
         }
 
-        // GET: Contributors
         [HttpGet]
-        [Route("GetFullNames")]
-        public async Task<List<string>> GetFullNames()
+        [Route("GetByOrganizationId/{orgId}")]
+        public async Task<List<Contributor>> GetByOrganizationId(int orgId)
         {
             return await _context.Contributor
-                .Where(x => x.Status == 1)
+                .Where(x => x.Status == 1 && x.OrganizationId == orgId)
+                .ToListAsync();
+        }
+
+        // GET: Contributors
+        [HttpGet]
+        [Route("GetFullNamesByOrganizationId/{orgId}")]
+        public async Task<List<string>> GetFullNames(int orgId)
+        {
+            return await _context.Contributor
+                .Where(x => x.Status == 1 && x.OrganizationId == orgId)
                 .Select(x => string.Concat(x.FirstName, " ", x.LastName))
                 .ToListAsync();
         }
@@ -66,6 +75,8 @@ namespace Church.API.Controllers
             {
                 return BadRequest("Invalid update request. Member Id does not match Member details object");
             }
+
+            contributor.DateChanged = DateTime.UtcNow;
 
             _context.Entry(contributor).Property(x => x.FirstName).IsModified = true;
             _context.Entry(contributor).Property(x => x.LastName).IsModified = true;
@@ -118,8 +129,9 @@ namespace Church.API.Controllers
         public async Task<ActionResult<Contributor>> PostContributor(Contributor contributor)
         {
             var existsMemberWithName = _context.Contributor
-                .Any(x => x.FirstName.Equals(contributor.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
-                            x.LastName.Equals(contributor.LastName, StringComparison.InvariantCultureIgnoreCase));
+                .Any(x => x.OrganizationId == contributor.OrganizationId && 
+                          x.FirstName.Equals(contributor.FirstName, StringComparison.InvariantCultureIgnoreCase) &&
+                          x.LastName.Equals(contributor.LastName, StringComparison.InvariantCultureIgnoreCase));
 
             if (existsMemberWithName)
             {
@@ -128,6 +140,7 @@ namespace Church.API.Controllers
 
             contributor.ContributorId = Utils.GetNextIdAsync(_context, "contributor").Result;
             contributor.Status = 1;
+            contributor.DateAdded = DateTime.UtcNow;
 
             _context.Contributor.Add(contributor);
             if (string.IsNullOrEmpty(contributor.FamilyName))

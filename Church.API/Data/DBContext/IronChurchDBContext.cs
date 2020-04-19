@@ -207,6 +207,9 @@ namespace Church.API.Data.DBContext
             {
                 entity.ToTable("contributor");
 
+                entity.HasIndex(e => e.OrganizationId)
+                    .HasName("fk_member_organization_id");
+
                 entity.Property(e => e.ContributorId)
                     .HasColumnName("contributor_id")
                     .HasColumnType("int(11)");
@@ -232,10 +235,19 @@ namespace Church.API.Data.DBContext
                     .HasColumnName("last_name")
                     .HasColumnType("varchar(50)");
 
+                entity.Property(e => e.OrganizationId)
+                    .HasColumnName("organization_id")
+                    .HasColumnType("int(11)");
+
                 entity.Property(e => e.Status)
                     .HasColumnName("status")
                     .HasColumnType("tinyint(4)")
                     .HasDefaultValueSql("'1'");
+
+                /*entity.HasOne(d => d.Organization)
+                    .WithMany(p => p.Contributor)
+                    .HasForeignKey(d => d.OrganizationId)
+                    .HasConstraintName("fk_member_organization_id");*/
             });
 
             modelBuilder.Entity<ContributorLoan>(entity =>
