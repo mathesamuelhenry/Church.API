@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Church.API.Data.DBContext;
 using Church.API.Models;
 using Newtonsoft.Json;
+using Church.API.Models.AppModel.Request.Transactions;
+using MySql.Data.MySqlClient;
+using System.Data;
+using Church.API.Models.AppModel.Response.Transactions;
 
 namespace Church.API.Controllers
 {
@@ -41,6 +45,178 @@ namespace Church.API.Controllers
                 .Skip(skip)
                 .Take(limit)
                 .ToList();
+        }
+
+        // GET: api/Transactions
+        [HttpPost]
+        [Route("SearchTransactions")]
+        public List<SearchTransactionsResponse> SearchTransactions([FromBody] SearchTransactionsRequest searchTransactionsRequest)
+        {
+            string orderByClause = string.Empty;
+            string limitClause = string.Empty; 
+            string sWhere = "cn.status = 1";
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.OrganizationId?.ToString()))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"acc.organization_id = {searchTransactionsRequest.OrganizationId}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.MemberPayeeId?.ToString()))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"cn.contributor_id = {searchTransactionsRequest.MemberPayeeId}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionName.ToString()))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"cn.contribution_name = '{searchTransactionsRequest.TransactionName}'";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.AccountId?.ToString()))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"acc.account_id = {searchTransactionsRequest.AccountId}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionType))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"cn.transaction_type = {searchTransactionsRequest.TransactionType}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionMode))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"cn.transaction_mode = {searchTransactionsRequest.TransactionMode}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.Category))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"cn.category = {searchTransactionsRequest.Category}";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.CheckNumber))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+                sWhere += $"cn.check_number = '{searchTransactionsRequest.CheckNumber}'";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.FromDate.ToString()))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+
+                sWhere += $"date_format(cn.transaction_date, '%Y-%m-%d') >= '{searchTransactionsRequest.FromDate.Value.ToString("yyyy-MM-dd")}'";
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.ToDate.ToString()))
+            {
+                if (!string.IsNullOrWhiteSpace(sWhere))
+                    sWhere += " AND ";
+
+                sWhere += $"date_format(cn.transaction_date, '%Y-%m-%d') <= '{searchTransactionsRequest.FromDate.Value.ToString("yyyy-MM-dd")}'";
+            }
+
+            sWhere = $" WHERE {sWhere} ";
+            
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.SearchParameters?.OrderBy))
+                orderByClause = $"ORDER BY {searchTransactionsRequest.SearchParameters?.OrderBy} {searchTransactionsRequest.SearchParameters?.SortOrder}";
+
+            limitClause = $"LIMIT {searchTransactionsRequest.SearchParameters?.StartAt}, {searchTransactionsRequest.SearchParameters?.MaxRecords}";
+
+            var transactionList = new List<SearchTransactionsResponse>();
+
+            using (MySqlConnection connection = (MySqlConnection)_context.Database.GetDbConnection())
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = $@"SELECT cn.contribution_id AS 'Contribution Id',
+       acc.account_name,
+       cn.account_id as 'AccountId',
+       CASE
+          WHEN IFNULL(cn.contribution_name, '') = ''
+          THEN
+             CONCAT(cr.first_name, ' ', cr.last_name)
+          ELSE
+             cn.contribution_name
+       END
+          AS 'Name',
+       cvd.description AS Category,
+       cvd_transtype.description AS Type,
+       cvd_transmode.description AS Mode,
+       cn.amount AS Amount,
+       cn.check_number AS 'Check #',
+       cn.transaction_date AS 'Trans DT',
+       cn.note AS 'Note',
+       cn.date_added AS 'Date Added'
+  FROM contribution cn
+       LEFT JOIN account acc
+          ON acc.account_id = cn.account_id AND acc.status = 1
+       LEFT JOIN organization org
+          ON org.organization_id = acc.organization_id
+       LEFT JOIN contributor cr ON cr.contributor_id = cn.contributor_id
+       LEFT JOIN table_column tc
+          ON     tc.table_name = 'contribution'
+             AND tc.column_name = 'category'
+             AND tc.status = 1
+       LEFT JOIN column_value_desc cvd
+          ON     cvd.table_column_id = tc.table_column_id
+             AND cvd.value = cn.category
+             AND cvd.status = 1
+       LEFT JOIN table_column tc_transtype
+          ON     tc_transtype.table_name = 'contribution'
+             AND tc_transtype.column_name = 'transaction_type'
+             AND tc_transtype.status = 1
+       LEFT JOIN column_value_desc cvd_transtype
+          ON     cvd_transtype.table_column_id = tc_transtype.table_column_id
+             AND cvd_transtype.value = cn.transaction_type
+             AND cvd_transtype.status = 1
+       LEFT JOIN table_column tc_transmode
+          ON     tc_transmode.table_name = 'contribution'
+             AND tc_transmode.column_name = 'transaction_mode'
+             AND tc_transmode.status = 1
+       LEFT JOIN column_value_desc cvd_transmode
+          ON     cvd_transmode.table_column_id = tc_transmode.table_column_id
+             AND cvd_transmode.value = cn.transaction_mode
+             AND cvd_transmode.status = 1
+ -- ORDER BY cn.date_added DESC; 
+{sWhere} {orderByClause} {limitClause}";
+
+                    try
+                    {
+                        MySqlDataAdapter sda = new MySqlDataAdapter();
+                        sda.SelectCommand = command;
+                        System.Data.DataTable dt = new System.Data.DataTable();
+                        sda.Fill(dt);
+
+                        if (dt != null && dt.Rows.Count > 0)
+                        {
+                            foreach (DataRow dRow in dt.Rows)
+                            {
+                                transactionList.Add(new SearchTransactionsResponse(dRow));
+                            }
+                        }
+                    }
+                    finally
+                    {
+                    }
+                }
+            }
+
+            return transactionList;
         }
 
         [HttpGet]

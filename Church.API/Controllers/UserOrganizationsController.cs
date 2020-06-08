@@ -49,6 +49,8 @@ namespace Church.API.Controllers
         public async Task<ActionResult<List<UserOrganization>>> GetByAuthUserId(int authUserId)
         {
             var userOrganization = await _context.UserOrganization
+                .Include(x => x.Organization)
+                .Include(x => x.Organization.Industry)
                 .Where(x => x.AuthUserId == authUserId)
                 .ToListAsync();
 

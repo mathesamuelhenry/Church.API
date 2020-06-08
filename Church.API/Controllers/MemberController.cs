@@ -26,7 +26,10 @@ namespace Church.API.Controllers
         [HttpGet]
         public async Task<List<Contributor>> Get()
         {
-            return await _context.Contributor.Where(x => x.Status == 1).ToListAsync();
+            return await _context.Contributor
+                .Where(x => x.Status == 1)
+                .OrderByDescending(x => x.DateAdded)
+                .ToListAsync();
         }
 
         [HttpGet]
@@ -73,7 +76,7 @@ namespace Church.API.Controllers
         {
             if (id != contributor.ContributorId)
             {
-                return BadRequest("Invalid update request. Member Id does not match Member details object");
+                return BadRequest($"Invalid update request. Member Id does not match Member details object. Id {id}, contributor.ContributorId {contributor.ContributorId}, {contributor.FirstName}, {contributor.LastName}");
             }
 
             contributor.DateChanged = DateTime.UtcNow;
