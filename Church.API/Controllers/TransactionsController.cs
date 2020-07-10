@@ -12,6 +12,7 @@ using Church.API.Models.AppModel.Request.Transactions;
 using MySql.Data.MySqlClient;
 using System.Data;
 using Church.API.Models.AppModel.Response.Transactions;
+using Church.API.Models.AppModel.Response;
 
 namespace Church.API.Controllers
 {
@@ -50,7 +51,7 @@ namespace Church.API.Controllers
         // GET: api/Transactions
         [HttpPost]
         [Route("SearchTransactions")]
-        public List<SearchTransactionsResponse> SearchTransactions([FromBody] SearchTransactionsRequest searchTransactionsRequest)
+        public GenericSearchResponse<List<SearchTransactionsResponse>> SearchTransactions([FromBody] SearchTransactionsRequest searchTransactionsRequest)
         {
             string orderByClause = string.Empty;
             string limitClause = string.Empty; 
@@ -70,7 +71,7 @@ namespace Church.API.Controllers
                 sWhere += $"cn.contributor_id = {searchTransactionsRequest.MemberPayeeId}";
             }
 
-            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionName.ToString()))
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionName))
             {
                 if (!string.IsNullOrWhiteSpace(sWhere))
                     sWhere += " AND ";
@@ -84,21 +85,21 @@ namespace Church.API.Controllers
                 sWhere += $"acc.account_id = {searchTransactionsRequest.AccountId}";
             }
 
-            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionType))
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionType?.ToString()))
             {
                 if (!string.IsNullOrWhiteSpace(sWhere))
                     sWhere += " AND ";
                 sWhere += $"cn.transaction_type = {searchTransactionsRequest.TransactionType}";
             }
 
-            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionMode))
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.TransactionMode?.ToString()))
             {
                 if (!string.IsNullOrWhiteSpace(sWhere))
                     sWhere += " AND ";
                 sWhere += $"cn.transaction_mode = {searchTransactionsRequest.TransactionMode}";
             }
 
-            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.Category))
+            if (!string.IsNullOrWhiteSpace(searchTransactionsRequest.Category?.ToString()))
             {
                 if (!string.IsNullOrWhiteSpace(sWhere))
                     sWhere += " AND ";
@@ -125,7 +126,7 @@ namespace Church.API.Controllers
                 if (!string.IsNullOrWhiteSpace(sWhere))
                     sWhere += " AND ";
 
-                sWhere += $"date_format(cn.transaction_date, '%Y-%m-%d') <= '{searchTransactionsRequest.FromDate.Value.ToString("yyyy-MM-dd")}'";
+                sWhere += $"date_format(cn.transaction_date, '%Y-%m-%d') <= '{searchTransactionsRequest.ToDate.Value.ToString("yyyy-MM-dd")}'";
             }
 
             sWhere = $" WHERE {sWhere} ";
@@ -136,15 +137,21 @@ namespace Church.API.Controllers
             limitClause = $"LIMIT {searchTransactionsRequest.SearchParameters?.StartAt}, {searchTransactionsRequest.SearchParameters?.MaxRecords}";
 
             var transactionList = new List<SearchTransactionsResponse>();
-
+            // var ContributionList = new List<Contribution>();
+            int totalRows = 0;
+            
             using (MySqlConnection connection = (MySqlConnection)_context.Database.GetDbConnection())
             {
                 connection.Open();
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $@"SELECT cn.contribution_id AS 'Contribution Id',
+                    command.CommandText = $@"SELECT sql_calc_found_rows cn.contribution_id AS 'Contribution Id',
+       cn.contributor_id,
        acc.account_name,
+       cr.first_name,
+       cr.last_name,
+       cr.family_name,
        cn.account_id as 'AccountId',
        CASE
           WHEN IFNULL(cn.contribution_name, '') = ''
@@ -193,20 +200,53 @@ namespace Church.API.Controllers
              AND cvd_transmode.value = cn.transaction_mode
              AND cvd_transmode.status = 1
  -- ORDER BY cn.date_added DESC; 
-{sWhere} {orderByClause} {limitClause}";
+{sWhere} {orderByClause} {limitClause};
+select found_rows() as total_records";
 
                     try
                     {
                         MySqlDataAdapter sda = new MySqlDataAdapter();
                         sda.SelectCommand = command;
-                        System.Data.DataTable dt = new System.Data.DataTable();
-                        sda.Fill(dt);
+                        
+                        DataSet ds = new DataSet();
+                        sda.Fill(ds);
+
+                        System.Data.DataTable dt = ds.Tables[0];
+                        totalRows = int.Parse(ds.Tables[1].Rows[0]["total_records"].ToString());
 
                         if (dt != null && dt.Rows.Count > 0)
                         {
                             foreach (DataRow dRow in dt.Rows)
                             {
                                 transactionList.Add(new SearchTransactionsResponse(dRow));
+
+                                /*ContributionList.Add(new Contribution()
+                                {
+                                    ContributionName = dRow["Name"].ToString(),
+                                    ContributorId = int.TryParse(dRow["contributor_id"].ToString(), out int conId) ? int.Parse(dRow["contributor_id"].ToString()) : (int?)null,
+                                    Contributor = int.TryParse(dRow["contributor_id"].ToString(), out int contId) ? new Contributor()
+                                    {
+                                        ContributorId = int.Parse(dRow["contributor_id"].ToString()),
+                                        FirstName = dRow["first_name"].ToString(),
+                                        LastName = dRow["last_name"].ToString(),
+                                        FamilyName = dRow["family_name"].ToString()
+                                    } : null,
+                                    Amount = Convert.ToDecimal(dRow["Amount"].ToString()),
+                                    Category = dRow["family_name"].ToString()
+                                });*/
+
+                                /*this.ContributionId = dRow["Contribution Id"].ToString();
+                                this.AccountId = dRow["AccountId"].ToString();
+                                this.AccountName = dRow["account_name"].ToString();
+                                this.ContributorName = dRow["Name"].ToString();
+                                this.Category = dRow["Category"].ToString();
+                                this.TransactionType = dRow["Type"].ToString();
+                                this.TransactionMode = dRow["Mode"].ToString();
+                                this.Amount = dRow["Amount"].ToString();
+                                this.CheckNumber = dRow["Check #"].ToString();
+                                this.TransactionDate = Convert.ToDateTime(dRow["Trans DT"].ToString());
+                                this.Note = dRow["Note"].ToString();
+                                this.DateAdded = Convert.ToDateTime(dRow["Date Added"].ToString());*/
                             }
                         }
                     }
@@ -216,7 +256,13 @@ namespace Church.API.Controllers
                 }
             }
 
-            return transactionList;
+            var SearchTransactionResponseList = new GenericSearchResponse<List<SearchTransactionsResponse>>()
+            {
+                Response = transactionList,
+                TotalRecordCount = totalRows
+            };
+
+            return SearchTransactionResponseList;
         }
 
         [HttpGet]
