@@ -13,6 +13,7 @@ using MySql.Data.MySqlClient;
 using System.Data;
 using Church.API.Models.AppModel.Response.Transactions;
 using Church.API.Models.AppModel.Response;
+using Church.API.Data;
 
 namespace Church.API.Controllers
 {
@@ -380,6 +381,88 @@ select found_rows() as total_records";
 
         //    return contribution;
         //}
+
+        // PUT: api/Accounts/5
+        
+        [HttpPost]
+        public async Task<ActionResult<Contribution>> PostContribution(Contribution contribution)
+        {
+            contribution.ContributionId = Utils.GetNextIdAsync(_context, "contribution").Result;
+            contribution.Status = 1;
+            contribution.DateAdded = DateTime.UtcNow;
+            contribution.UserAdded = "smathe"; // TODO : Change to user login id
+
+            string errorMessage = string.Empty;
+
+            if (!this.IsValid(contribution, out errorMessage))
+                return BadRequest(errorMessage);
+
+            if (string.IsNullOrWhiteSpace(contribution.ContributionName))
+                contribution.ContributionName = null;
+            if (string.IsNullOrWhiteSpace(contribution.CheckNumber))
+                contribution.CheckNumber = null;
+            if (string.IsNullOrWhiteSpace(contribution.Note))
+                contribution.Note = null;
+
+            _context.Contribution.Add(contribution);
+            
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("Get", new { id = contribution.ContributionId }, contribution);
+        }
+
+        private bool IsValid(Contribution contribution, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(contribution.Category))
+            {
+                errorMessage = "Category cannot be empty";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(contribution.AccountId.ToString()) || contribution?.AccountId == 0)
+            {
+                errorMessage = "Account selection is required";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(contribution.TransactionType.ToString()) || contribution?.TransactionType == 0)
+            {
+                errorMessage = "Transaction type selection is required";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(contribution.TransactionMode.ToString()) || contribution?.TransactionMode == 0)
+            {
+                errorMessage = "Transaction mode selection is required";
+                return false;
+            }
+            else if (contribution.TransactionMode == (int)Constants.TransactionMode.Check &&
+                string.IsNullOrWhiteSpace(contribution.CheckNumber))
+            {
+                errorMessage = "Check number is required when transaction mode is check";
+                return false;
+            }
+            
+            if (string.IsNullOrWhiteSpace(contribution.Amount.ToString()))
+            {
+                errorMessage = "Amount is required";
+                return false;
+            }
+
+            if ((string.IsNullOrWhiteSpace(contribution.ContributorId.ToString()) || contribution.ContributorId == 0) &&
+                string.IsNullOrWhiteSpace(contribution.ContributionName))
+            {
+                errorMessage = "Member name from the list or Transaction Name is required";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(contribution.TransactionDate.ToString()))
+            {
+                errorMessage = "Transaction date is required";
+                return false;
+            }
+
+            return true;
+        }
 
         private bool ContributionExists(int id)
         {

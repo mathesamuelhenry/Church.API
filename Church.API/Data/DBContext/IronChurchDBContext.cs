@@ -130,6 +130,94 @@ namespace Church.API.Data.DBContext
             {
                 entity.ToTable("contribution");
 
+                entity.HasIndex(e => e.AccountId)
+                    .HasName("account_id");
+
+                entity.HasIndex(e => e.ContributorId)
+                    .HasName("contributor_id");
+
+                entity.Property(e => e.ContributionId)
+                    .HasColumnName("contribution_id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.AccountId)
+                    .HasColumnName("account_id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.Amount)
+                    .HasColumnName("amount")
+                    .HasColumnType("decimal(11,2)");
+
+                entity.Property(e => e.Category)
+                    .HasColumnName("category")
+                    .HasColumnType("varchar(50)");
+
+                entity.Property(e => e.CheckNumber)
+                    .HasColumnName("check_number")
+                    .HasColumnType("varchar(50)");
+
+                entity.Property(e => e.ContributionName)
+                    .HasColumnName("contribution_name")
+                    .HasColumnType("varchar(60)");
+
+                entity.Property(e => e.ContributorId)
+                    .HasColumnName("contributor_id")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.DateAdded)
+                    .HasColumnName("date_added")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.DateChanged)
+                    .HasColumnName("date_changed")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.Note)
+                    .HasColumnName("note")
+                    .HasColumnType("text");
+
+                entity.Property(e => e.Status)
+                    .HasColumnName("status")
+                    .HasColumnType("tinyint(4)")
+                    .HasDefaultValueSql("'1'");
+
+                entity.Property(e => e.TransactionDate)
+                    .HasColumnName("transaction_date")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.TransactionMode)
+                    .HasColumnName("transaction_mode")
+                    .HasColumnType("int(11)");
+
+                entity.Property(e => e.TransactionType)
+                    .HasColumnName("transaction_type")
+                    .HasColumnType("int(11)")
+                    .HasDefaultValueSql("'1'");
+
+                entity.Property(e => e.UserAdded)
+                    .HasColumnName("user_added")
+                    .HasColumnType("varchar(255)");
+
+                entity.Property(e => e.UserChanged)
+                    .HasColumnName("user_changed")
+                    .HasColumnType("varchar(255)");
+
+                /*entity.HasOne(d => d.Account)
+                    .WithMany(p => p.Contribution)
+                    .HasForeignKey(d => d.AccountId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("contribution_ibfk_2");
+
+                entity.HasOne(d => d.Contributor)
+                    .WithMany(p => p.Contribution)
+                    .HasForeignKey(d => d.ContributorId)
+                    .HasConstraintName("contribution_ibfk_1");*/
+            });
+
+            /*modelBuilder.Entity<Contribution>(entity =>
+            {
+                entity.ToTable("contribution");
+
                 entity.HasIndex(e => e.ContributorId)
                     .HasName("contribution_ibfk_1");
 
@@ -200,8 +288,8 @@ namespace Church.API.Data.DBContext
                 /*entity.HasOne(d => d.Contributor)
                     .WithMany(p => p.Contribution)
                     .HasForeignKey(d => d.ContributorId)
-                    .HasConstraintName("contribution_ibfk_1");*/
-            });
+                    .HasConstraintName("contribution_ibfk_1");
+            });*/
 
             modelBuilder.Entity<Contributor>(entity =>
             {
